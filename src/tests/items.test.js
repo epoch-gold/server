@@ -22,7 +22,7 @@ describe('Items Routes', () => {
   });
 
   test('GET /items/:id/auctions returns auctions for an item', async () => {
-    const mockAuctions = [{ entry: 1, quantity: 5, price: '1000' }];
+    const mockAuctions = [{ item: 1, quantity: 5, price: '1000' }];
     itemService.getAuctionsByItemId.mockResolvedValue(mockAuctions);
 
     const response = await request(app).get('/items/1/auctions');
@@ -31,13 +31,12 @@ describe('Items Routes', () => {
   });
 
   test('GET /items/:id/data returns market price data', async () => {
-    const mockPrice = { market_price: '1000.00', quantity: 5 };
-    marketPriceService.getMarketPricesByItemId.mockResolvedValue([mockPrice]);
-    marketPriceService.getCurrentMarketPrice.mockResolvedValue(mockPrice);
+    const mockPrices = [{ market_price: '1000.00', quantity: 5, timestamp: '1678886400' }];
+    marketPriceService.getMarketPricesByItemId.mockResolvedValue(mockPrices);
 
     const response = await request(app).get('/items/1/data');
     expect(response.status).toBe(200);
-    expect(response.body.current).toEqual(mockPrice);
+    expect(response.body).toEqual(mockPrices);
   });
 
   test('GET /items/:id/auctions returns 404 for non-existent item', async () => {

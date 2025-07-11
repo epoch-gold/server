@@ -22,11 +22,9 @@ const itemService = {
 
   async getAuctionsByItemId(itemId) {
     const result = await pool.query(
-      `SELECT a.entry, a.quantity, a.price, s.timestamp
-       FROM auctions a
-       JOIN scans s ON a.scan = s.id
-       WHERE a.item = $1
-       ORDER BY s.timestamp DESC`,
+      `SELECT item, quantity, price
+       FROM auctions
+       WHERE item = $1`,
       [itemId]
     );
     return result.rows;

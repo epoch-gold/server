@@ -3,24 +3,17 @@ const pool = require('../config/db');
 const marketPriceService = {
   async getMarketPricesByItemId(itemId) {
     const result = await pool.query(
-      `SELECT market_price, quantity
-       FROM market_data
-       WHERE item = $1
-       ORDER BY id DESC`,
+      `SELECT
+         md.market_price,
+         md.quantity,
+         s.timestamp
+       FROM market_data md
+       JOIN scans s ON md.scan = s.id
+       WHERE md.item = $1
+       ORDER BY s.timestamp DESC`,
       [itemId]
     );
     return result.rows;
-  },
-
-  async getCurrentMarketPrice(itemId) {
-    const result = await pool.query(
-      `SELECT market_price, quantity
-       FROM market_data
-       WHERE item = $1
-       AND id = (SELECT MAX(id) FROM market_data WHERE item = $1)`,
-      [itemId]
-    );
-    return result.rows[0];
   },
 };
 

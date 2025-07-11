@@ -31,15 +31,14 @@ router.get("/:id/data", async (req, res) => {
     const marketPrices = await marketPriceService.getMarketPricesByItemId(
       itemId
     );
+
     if (!marketPrices.length) {
       return res
         .status(404)
         .json({ error: "No market price data found for this item" });
     }
-    const currentPrice = await marketPriceService.getCurrentMarketPrice(itemId);
-    res.json({
-      current: currentPrice,
-    });
+
+    res.json(marketPrices);
   } catch (error) {
     res.status(500).json({ error: "Internal server error" });
   }
