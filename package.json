@@ -5,7 +5,7 @@
   "scripts": {
     "start": "node server.js",
     "test": "jest",
-    "docker:app": "docker compose up app",
+    "docker:app": "docker compose up app --build",
     "docker:test": "docker compose run --rm app npm test"
   },
   "keywords": [],

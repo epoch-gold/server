@@ -4,9 +4,10 @@ services:
     image: epoch-gold
     env_file:
       - .env
+    environment:
+      - DB_HOST=postgres
     volumes:
-      - .:/usr/src/app
-      - /usr/src/app/node_modules
+      - ./src:/usr/src/app/src
     depends_on:
       postgres:
         condition: service_healthy
