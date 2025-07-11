@@ -66,6 +66,7 @@ Configure the following secrets in your GitHub repository (`Settings > Secrets a
 - `SSH_PRIVATE_KEY`: Private SSH key for connecting to your VPS.
 - `SSH_HOST`: Your VPS hostname or IP address.
 - `SSH_USER`: Your SSH username for the VPS.
+- `API_KEY`: API key to allow posting scans.
 
 ### Deployment Workflow
 
