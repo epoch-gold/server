@@ -16,11 +16,12 @@ Run the server and tests on your local machine using Docker Compose.
 
 1.  **Clone the repository.**
 2.  **Navigate into the project directory.**
-3.  **Create a `.env` file** in the root directory with the following content, filling in your local database credentials:
+3.  **Create a `.env` file** in the root directory with the following content, filling in your local database credentials and API key (for scan posting):
     ```dotenv
     DB_USERNAME=
     DB_PASSWORD=
     DB_NAME=
+    API_KEY=
     ```
 4.  **Install dependencies**:
     ```bash
