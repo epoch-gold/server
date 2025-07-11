@@ -59,6 +59,7 @@ Configure the following secrets in your GitHub repository (`Settings > Secrets a
 
 - `DB_PASSWORD`: PostgreSQL database password.
 - `DB_USERNAME`: PostgreSQL database username.
+- `DB_NAME`: PostgreSQL database name.
 - `DOCKER_TOKEN`: Your Docker Hub access token.
 - `DOCKER_USERNAME`: Your Docker Hub username.
 - `DOCKER_IMAGE`: Your Docker image repository name (e.g., `epoch-gold`).
