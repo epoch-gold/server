@@ -1,6 +1,6 @@
-# Epoch Auction House Server
+# Project Epoch Auction House Server
 
-This is the backend server for the Epoch Auction House application, built with Node.js, Express, and PostgreSQL. It supports local development using Docker Compose and automated production deployment with GitHub Actions.
+This is the backend server for the Project Epoch Auction House, built with Node.js, Express, and PostgreSQL. It supports local development using Docker Compose and automated production deployment with GitHub Actions.
 
 ## Local Development
 
