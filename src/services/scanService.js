@@ -83,7 +83,7 @@ const scanService = {
       `
      SELECT
        a.item,
-       MIN(a.price) AS market_price,
+       MIN(a.price / a.quantity) AS market_price,
        SUM(a.quantity) AS quantity
      FROM auctions a
      WHERE a.scan = $1
