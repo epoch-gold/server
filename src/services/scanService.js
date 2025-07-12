@@ -81,32 +81,13 @@ const scanService = {
   async updateMarketData(client, scanId) {
     const marketDataResult = await client.query(
       `
-     WITH stats AS (
-       SELECT
-         a.item,
-         PERCENTILE_CONT(0.25) WITHIN GROUP (ORDER BY a.price) AS q1,
-         PERCENTILE_CONT(0.75) WITHIN GROUP (ORDER BY a.price) AS q3
-       FROM auctions a
-       WHERE a.scan = $1
-       GROUP BY a.item
-     ),
-     filtered_auctions AS (
-       SELECT
-         a.item,
-         a.price,
-         a.quantity
-       FROM auctions a
-       JOIN stats ON a.item = stats.item
-       WHERE a.scan = $1
-         AND a.price >= stats.q1 - 1.5 * (stats.q3 - stats.q1)
-         AND a.price <= stats.q3 + 1.5 * (stats.q3 - stats.q1)
-     )
      SELECT
-       fa.item,
-       (SUM(fa.price::NUMERIC * fa.quantity) / SUM(fa.quantity))::NUMERIC(15, 2) AS market_price,
-       SUM(fa.quantity) AS quantity
-     FROM filtered_auctions fa
-     GROUP BY fa.item
+       a.item,
+       MIN(a.price) AS market_price,
+       SUM(a.quantity) AS quantity
+     FROM auctions a
+     WHERE a.scan = $1
+     GROUP BY a.item
      `,
       [scanId]
     );

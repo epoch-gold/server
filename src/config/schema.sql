@@ -25,7 +25,7 @@ CREATE TABLE IF NOT EXISTS market_data (
     id SERIAL PRIMARY KEY,
     item INTEGER NOT NULL,
     scan INTEGER NOT NULL,
-    market_price NUMERIC(15, 2) NOT NULL,
+    market_price BIGINT NOT NULL,
     quantity INTEGER NOT NULL,
     FOREIGN KEY (item) REFERENCES items (id) ON DELETE CASCADE,
     FOREIGN KEY (scan) REFERENCES scans (id) ON DELETE CASCADE
