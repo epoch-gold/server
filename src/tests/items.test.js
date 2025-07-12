@@ -39,9 +39,10 @@ describe('Items Routes', () => {
     expect(response.body).toEqual(mockPrices);
   });
 
-  test('GET /items/:id/auctions returns 404 for non-existent item', async () => {
+  test('GET /items/:id/auctions returns an empty array for non-existent item', async () => {
     itemService.getAuctionsByItemId.mockResolvedValue([]);
     const response = await request(app).get('/items/999/auctions');
-    expect(response.status).toBe(404);
+    expect(response.status).toBe(200);
+    expect(response.body).toEqual([]);
   });
 });
