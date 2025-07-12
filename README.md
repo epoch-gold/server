@@ -22,6 +22,7 @@ Run the server and tests on your local machine using Docker Compose.
     DB_PASSWORD=
     DB_NAME=
     API_KEY=
+    ORIGIN_URL=
     ```
 4.  **Install dependencies**:
     ```bash
@@ -68,6 +69,7 @@ Configure the following secrets in your GitHub repository (`Settings > Secrets a
 - `SSH_HOST`: Your VPS hostname or IP address.
 - `SSH_USER`: Your SSH username for the VPS.
 - `API_KEY`: API key to allow posting scans.
+- `ORIGIN_URL`: Website URL for the front end.
 
 ### Deployment Workflow
 
