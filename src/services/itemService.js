@@ -4,18 +4,25 @@ const itemService = {
   async getAllItems(page = 1, limit = 50, search = "") {
     const offset = (page - 1) * limit;
 
-    let query = "SELECT * FROM items";
+    let query = `
+      SELECT 
+        i.*,
+        MIN(a.price / a.quantity)::numeric as price
+      FROM items i
+      LEFT JOIN auctions a ON i.id = a.item
+    `;
     let countQuery = "SELECT COUNT(*) FROM items";
     const params = [];
 
     if (search) {
-      query += " WHERE name ILIKE $1";
+      query += " WHERE i.name ILIKE $1";
       countQuery += " WHERE name ILIKE $1";
       params.push(`%${search}%`);
     }
 
+    query += " GROUP BY i.id, i.name, i.icon";
     query +=
-      " ORDER BY id LIMIT $" +
+      " ORDER BY i.id LIMIT $" +
       (params.length + 1) +
       " OFFSET $" +
       (params.length + 2);
