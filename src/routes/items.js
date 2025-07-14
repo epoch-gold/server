@@ -5,8 +5,25 @@ const marketPriceService = require("../services/marketPriceService");
 
 router.get("/", async (req, res) => {
   try {
-    const items = await itemService.getAllItems();
-    res.json(items);
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 50;
+    const search = req.query.search || "";
+
+    const result = await itemService.getAllItems(page, limit, search);
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+router.get("/:id", async (req, res) => {
+  try {
+    const itemId = parseInt(req.params.id);
+    const item = await itemService.getItemById(itemId);
+    if (!item) {
+      return res.status(404).json({ error: "Item not found" });
+    }
+    res.json(item);
   } catch (error) {
     res.status(500).json({ error: "Internal server error" });
   }
