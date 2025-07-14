@@ -1,5 +1,5 @@
-const pool = require('../config/db');
-const itemService = require('./itemService');
+const pool = require("../config/db");
+const itemService = require("./itemService");
 
 const scanService = {
   async processScan(scanData) {
@@ -8,40 +8,31 @@ const scanService = {
 
     const client = await pool.connect();
     try {
-      await client.query('BEGIN');
+      await client.query("BEGIN");
 
-      const scanDate = new Date(timestamp * 1000).toISOString().split('T')[0];
+      const scanDate = new Date(timestamp * 1000).toISOString().split("T")[0];
+      const currentDate = new Date().toISOString().split("T")[0];
+
+      if (scanDate !== currentDate) {
+        const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000)
+          .toISOString()
+          .split("T")[0];
+        await this.processEndOfDayAverages(client, yesterday);
+      }
 
       const scanResult = await client.query(
-        'INSERT INTO scans (timestamp, quantity) VALUES ($1, $2) RETURNING id',
+        "INSERT INTO scans (timestamp, quantity) VALUES ($1, $2) RETURNING id",
         [timestamp, count]
       );
       const scanId = scanResult.rows[0].id;
 
-      await client.query(
-        `DELETE FROM market_data 
-         WHERE scan IN (
-           SELECT id FROM scans 
-           WHERE DATE(TIMESTAMP 'epoch' + timestamp * INTERVAL '1 second') = $1
-           AND id != $2
-         )`,
-        [scanDate, scanId]
-      );
-
-      await client.query('DELETE FROM auctions');
-
-      await client.query(
-        `DELETE FROM scans 
-         WHERE id != $1 
-         AND DATE(TIMESTAMP 'epoch' + timestamp * INTERVAL '1 second') = $2`,
-        [scanId, scanDate]
-      );
+      await client.query("DELETE FROM auctions");
 
       for (const item of items) {
         await itemService.createItem({
           id: item.entry,
           name: item.name,
-          icon: item.icon
+          icon: item.icon,
         });
       }
 
@@ -59,7 +50,7 @@ const scanService = {
         for (let i = 0; i < itemAuctions.length; i++) {
           const auction = itemAuctions[i];
           await client.query(
-            'INSERT INTO auctions (item, index, scan, quantity, price) VALUES ($1, $2, $3, $4, $5)',
+            "INSERT INTO auctions (item, index, scan, quantity, price) VALUES ($1, $2, $3, $4, $5)",
             [auction.entry, i + 1, scanId, auction.quantity, auction.price]
           );
         }
@@ -67,11 +58,11 @@ const scanService = {
 
       await this.updateMarketData(client, scanId);
 
-      await client.query('COMMIT');
+      await client.query("COMMIT");
       return scanId;
     } catch (error) {
-      await client.query('ROLLBACK');
-      console.error('Error processing scan:', error.message);
+      await client.query("ROLLBACK");
+      console.error("Error processing scan:", error.message);
       throw error;
     } finally {
       client.release();
@@ -98,6 +89,105 @@ const scanService = {
          VALUES ($1, $2, $3, $4)`,
         [row.item, scanId, row.market_price, row.quantity]
       );
+    }
+  },
+
+  async processEndOfDayAverages(client, targetDate) {
+    const avgResult = await client.query(
+      `
+      SELECT 
+        md.item,
+        AVG(md.market_price) AS avg_market_price,
+        SUM(md.quantity) AS total_quantity,
+        MIN(s.timestamp) AS day_timestamp
+      FROM market_data md
+      JOIN scans s ON md.scan = s.id
+      WHERE DATE(TIMESTAMP 'epoch' + s.timestamp * INTERVAL '1 second') = $1
+      GROUP BY md.item
+      `,
+      [targetDate]
+    );
+
+    if (avgResult.rows.length > 0) {
+      const dayTimestamp = avgResult.rows[0].day_timestamp;
+      const avgScanResult = await client.query(
+        "INSERT INTO scans (timestamp, quantity) VALUES ($1, $2) RETURNING id",
+        [dayTimestamp, 0]
+      );
+      const avgScanId = avgScanResult.rows[0].id;
+
+      for (const row of avgResult.rows) {
+        await client.query(
+          `INSERT INTO market_data (item, scan, market_price, quantity)
+           VALUES ($1, $2, $3, $4)`,
+          [
+            row.item,
+            avgScanId,
+            Math.round(row.avg_market_price),
+            row.total_quantity,
+          ]
+        );
+      }
+
+      await client.query(
+        `DELETE FROM market_data 
+         WHERE scan IN (
+           SELECT id FROM scans 
+           WHERE DATE(TIMESTAMP 'epoch' + timestamp * INTERVAL '1 second') = $1
+           AND id != $2
+         )`,
+        [targetDate, avgScanId]
+      );
+
+      await client.query(
+        `DELETE FROM scans 
+         WHERE DATE(TIMESTAMP 'epoch' + timestamp * INTERVAL '1 second') = $1
+         AND id != $2`,
+        [targetDate, avgScanId]
+      );
+    }
+  },
+
+  async processAllPendingAverages() {
+    const client = await pool.connect();
+    try {
+      await client.query("BEGIN");
+
+      const pendingDates = await client.query(
+        `
+        SELECT DISTINCT DATE(TIMESTAMP 'epoch' + s.timestamp * INTERVAL '1 second') as scan_date
+        FROM scans s
+        WHERE s.quantity > 0  -- Exclude already averaged scans (quantity = 0)
+        GROUP BY DATE(TIMESTAMP 'epoch' + s.timestamp * INTERVAL '1 second')
+        HAVING COUNT(*) > 1
+        ORDER BY scan_date
+        `
+      );
+
+      for (const row of pendingDates.rows) {
+        await this.processEndOfDayAverages(client, row.scan_date);
+      }
+
+      await client.query("COMMIT");
+      return pendingDates.rows.length;
+    } catch (error) {
+      await client.query("ROLLBACK");
+      console.error("Error processing pending averages:", error.message);
+      throw error;
+    } finally {
+      client.release();
+    }
+  },
+
+  async runProcessAverages() {
+    try {
+      console.log("Processing pending day averages...");
+      const processedDays = await this.processAllPendingAverages();
+      console.log(`Successfully processed averages for ${processedDays} days.`);
+      return processedDays;
+    } catch (error) {
+      console.error("Error processing averages:", error.message);
+      throw error;
     }
   },
 };

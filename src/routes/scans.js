@@ -1,36 +1,47 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const scanService = require('../services/scanService');
+const scanService = require("../services/scanService");
 
 const API_KEY = process.env.API_KEY;
 
 const authenticateApiKey = (req, res, next) => {
-  const apiKey = req.headers['x-api-key'];
+  const apiKey = req.headers["x-api-key"];
   if (!apiKey || apiKey !== API_KEY) {
-    return res.status(401).json({ error: 'Unauthorized: Invalid API key' });
+    return res.status(401).json({ error: "Unauthorized: Invalid API key" });
   }
   next();
 };
 
-router.post('/', authenticateApiKey, async (req, res) => {
+router.post("/", authenticateApiKey, async (req, res) => {
   try {
     let scanData;
 
     if (req.body.AuctionScraper_Data) {
       const auctionData = req.body.AuctionScraper_Data;
 
-      if (!auctionData.items || !auctionData.auctions || !auctionData.scanInfo || !auctionData.scanInfo.timestamp || !auctionData.scanInfo.count) {
-        return res.status(400).json({ error: 'Invalid scan data: Missing items, auctions, or scanInfo (with timestamp or count)' });
+      if (
+        !auctionData.items ||
+        !auctionData.auctions ||
+        !auctionData.scanInfo ||
+        !auctionData.scanInfo.timestamp ||
+        !auctionData.scanInfo.count
+      ) {
+        return res
+          .status(400)
+          .json({
+            error:
+              "Invalid scan data: Missing items, auctions, or scanInfo (with timestamp or count)",
+          });
       }
 
       const itemMap = new Map();
-      auctionData.items.forEach(item => {
+      auctionData.items.forEach((item) => {
         if (item.entry) {
           if (!itemMap.has(item.entry)) {
             itemMap.set(item.entry, {
               entry: item.entry,
               name: item.name,
-              icon: item.icon
+              icon: item.icon,
             });
           }
         }
@@ -38,38 +49,61 @@ router.post('/', authenticateApiKey, async (req, res) => {
 
       scanData = {
         items: Array.from(itemMap.values()),
-        auctions: auctionData.auctions.map(auction => ({
+        auctions: auctionData.auctions.map((auction) => ({
           entry: auction.entry,
           quantity: auction.quantity,
-          price: auction.price
+          price: auction.price,
         })),
         scanInfo: {
           timestamp: auctionData.scanInfo.timestamp,
-          count: auctionData.scanInfo.count
-        }
+          count: auctionData.scanInfo.count,
+        },
       };
     } else {
       scanData = req.body;
-      if (!scanData.items || !scanData.auctions || !scanData.scanInfo || !scanData.scanInfo.timestamp || !scanData.scanInfo.count) {
-        return res.status(400).json({ error: 'Invalid scan data: Missing items, auctions, or scanInfo (with timestamp or count)' });
+      if (
+        !scanData.items ||
+        !scanData.auctions ||
+        !scanData.scanInfo ||
+        !scanData.scanInfo.timestamp ||
+        !scanData.scanInfo.count
+      ) {
+        return res
+          .status(400)
+          .json({
+            error:
+              "Invalid scan data: Missing items, auctions, or scanInfo (with timestamp or count)",
+          });
       }
     }
 
-    const invalidItems = scanData.items.filter(item => !item.entry || !item.name || !item.icon);
+    const invalidItems = scanData.items.filter(
+      (item) => !item.entry || !item.name || !item.icon
+    );
     if (invalidItems.length > 0) {
-      return res.status(400).json({ error: `Invalid scan data: ${invalidItems.length} items are missing entry, name, or icon` });
+      return res
+        .status(400)
+        .json({
+          error: `Invalid scan data: ${invalidItems.length} items are missing entry, name, or icon`,
+        });
     }
 
-    const invalidAuctions = scanData.auctions.filter(auction => !auction.entry || !auction.quantity || !auction.price);
+    const invalidAuctions = scanData.auctions.filter(
+      (auction) => !auction.entry || !auction.quantity || !auction.price
+    );
     if (invalidAuctions.length > 0) {
-      return res.status(400).json({ error: `Invalid scan data: ${invalidAuctions.length} auctions are missing entry, quantity, or price` });
+      return res
+        .status(400)
+        .json({
+          error: `Invalid scan data: ${invalidAuctions.length} auctions are missing entry, quantity, or price`,
+        });
     }
 
     const scanId = await scanService.processScan(scanData);
     res.status(201).json({ scan_id: scanId });
   } catch (error) {
-    console.error('Error processing scan:', error.message);
-    res.status(500).json({ error: 'Internal server error' });
+    console.error("Error processing scan:", error.message);
+    res.status(500).json({ error: "Internal server error" });
   }
 });
 
