@@ -120,7 +120,7 @@ const scanService = {
       await client.query(
         `INSERT INTO market_data (item, scan, market_price, quantity)
          VALUES ($1, $2, $3, $4)`,
-        [itemId, scanId, marketPrice, totalQuantity]
+        [itemId, scanId, Math.round(marketPrice), totalQuantity]
       );
     }
   },

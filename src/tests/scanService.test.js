@@ -44,7 +44,7 @@ describe("ScanService - Market Price Calculation", () => {
 
       expect(mockClient.query).toHaveBeenCalledWith(
         "INSERT INTO market_data (item, scan, market_price, quantity)\n         VALUES ($1, $2, $3, $4)",
-        [123, scanId, 1.25, 11]
+        [123, scanId, 1, 11]
       );
     });
 
