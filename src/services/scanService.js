@@ -70,24 +70,57 @@ const scanService = {
   },
 
   async updateMarketData(client, scanId) {
-    const marketDataResult = await client.query(
-      `
-     SELECT
-       a.item,
-       MIN(a.price / a.quantity) AS market_price,
-       SUM(a.quantity) AS quantity
-     FROM auctions a
-     WHERE a.scan = $1
-     GROUP BY a.item
-     `,
+    const itemsResult = await client.query(
+      `SELECT DISTINCT item FROM auctions WHERE scan = $1`,
       [scanId]
     );
 
-    for (const row of marketDataResult.rows) {
+    for (const itemRow of itemsResult.rows) {
+      const itemId = itemRow.item;
+
+      const auctionsResult = await client.query(
+        `
+        SELECT 
+          a.price / a.quantity AS unit_price,
+          a.quantity
+        FROM auctions a
+        WHERE a.scan = $1 AND a.item = $2
+        ORDER BY a.price / a.quantity ASC
+        `,
+        [scanId, itemId]
+      );
+
+      if (auctionsResult.rows.length === 0) continue;
+
+      const auctions = auctionsResult.rows;
+      const totalQuantity = auctions.reduce(
+        (sum, auction) => sum + auction.quantity,
+        0
+      );
+
+      const lowest20PercentCount = Math.max(
+        1,
+        Math.ceil(auctions.length * 0.2)
+      );
+      const lowest20Percent = auctions.slice(0, lowest20PercentCount);
+
+      const sortedPrices = lowest20Percent
+        .map((auction) => auction.unit_price)
+        .sort((a, b) => a - b);
+      let marketPrice;
+
+      if (sortedPrices.length % 2 === 0) {
+        const mid1 = sortedPrices[Math.floor(sortedPrices.length / 2) - 1];
+        const mid2 = sortedPrices[Math.floor(sortedPrices.length / 2)];
+        marketPrice = (mid1 + mid2) / 2;
+      } else {
+        marketPrice = sortedPrices[Math.floor(sortedPrices.length / 2)];
+      }
+
       await client.query(
         `INSERT INTO market_data (item, scan, market_price, quantity)
          VALUES ($1, $2, $3, $4)`,
-        [row.item, scanId, row.market_price, row.quantity]
+        [itemId, scanId, marketPrice, totalQuantity]
       );
     }
   },
