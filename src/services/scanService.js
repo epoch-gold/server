@@ -98,32 +98,44 @@ const scanService = {
         0
       );
 
-      const lowest20PercentCount = Math.max(
-        1,
-        Math.ceil(auctions.length * 0.2)
-      );
-      const lowest20Percent = auctions.slice(0, lowest20PercentCount);
+      const perUnitPrices = [];
 
-      const sortedPrices = lowest20Percent.map((auction) => auction.unit_price);
-      let marketPrice;
+      for (const auction of auctions) {
+        const unitPrice = parseFloat(auction.unit_price);
+        const quantity = parseInt(auction.quantity);
 
-      if (sortedPrices.length % 2 === 0) {
-        const mid1 = sortedPrices[Math.floor(sortedPrices.length / 2) - 1];
-        const mid2 = sortedPrices[Math.floor(sortedPrices.length / 2)];
-        marketPrice = (mid1 + mid2) / 2;
-      } else {
-        marketPrice = sortedPrices[Math.floor(sortedPrices.length / 2)];
+        if (!isNaN(unitPrice) && unitPrice > 0 && quantity > 0) {
+          perUnitPrices.push(unitPrice);
+        }
       }
 
-      if (sortedPrices.length % 2 === 0) {
-        const mid1Index = Math.floor(sortedPrices.length / 2) - 1;
-        const mid2Index = Math.floor(sortedPrices.length / 2);
-        const mid1 = parseFloat(sortedPrices[mid1Index]);
-        const mid2 = parseFloat(sortedPrices[mid2Index]);
+      if (perUnitPrices.length === 0) continue;
+
+      perUnitPrices.sort((a, b) => a - b);
+
+      let trimmedPrices = perUnitPrices;
+      if (perUnitPrices.length >= 10) {
+        const trimPercent = 0.1;
+        const trimCount = Math.floor(perUnitPrices.length * trimPercent);
+        trimmedPrices = perUnitPrices.slice(
+          trimCount,
+          perUnitPrices.length - trimCount
+        );
+      } else if (perUnitPrices.length >= 5) {
+        trimmedPrices = perUnitPrices.slice(1, perUnitPrices.length - 1);
+      }
+
+      let marketPrice;
+      const priceCount = trimmedPrices.length;
+
+      if (priceCount === 1) {
+        marketPrice = trimmedPrices[0];
+      } else if (priceCount % 2 === 0) {
+        const mid1 = trimmedPrices[priceCount / 2 - 1];
+        const mid2 = trimmedPrices[priceCount / 2];
         marketPrice = (mid1 + mid2) / 2;
       } else {
-        const midIndex = Math.floor(sortedPrices.length / 2);
-        marketPrice = parseFloat(sortedPrices[midIndex]);
+        marketPrice = trimmedPrices[Math.floor(priceCount / 2)];
       }
 
       await client.query(
