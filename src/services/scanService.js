@@ -104,9 +104,7 @@ const scanService = {
       );
       const lowest20Percent = auctions.slice(0, lowest20PercentCount);
 
-      const sortedPrices = lowest20Percent
-        .map((auction) => auction.unit_price)
-        .sort((a, b) => a - b);
+      const sortedPrices = lowest20Percent.map((auction) => auction.unit_price);
       let marketPrice;
 
       if (sortedPrices.length % 2 === 0) {
@@ -115,6 +113,17 @@ const scanService = {
         marketPrice = (mid1 + mid2) / 2;
       } else {
         marketPrice = sortedPrices[Math.floor(sortedPrices.length / 2)];
+      }
+
+      if (sortedPrices.length % 2 === 0) {
+        const mid1Index = Math.floor(sortedPrices.length / 2) - 1;
+        const mid2Index = Math.floor(sortedPrices.length / 2);
+        const mid1 = parseFloat(sortedPrices[mid1Index]);
+        const mid2 = parseFloat(sortedPrices[mid2Index]);
+        marketPrice = (mid1 + mid2) / 2;
+      } else {
+        const midIndex = Math.floor(sortedPrices.length / 2);
+        marketPrice = parseFloat(sortedPrices[midIndex]);
       }
 
       await client.query(
