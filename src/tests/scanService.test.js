@@ -17,7 +17,7 @@ describe("ScanService - Market Price Calculation", () => {
   });
 
   describe("updateMarketData", () => {
-    test("calculates median with 10% outlier trimming for datasets ≥10", async () => {
+    test("uses lowest unit price for datasets with multiple auctions", async () => {
       const scanId = 1;
 
       mockClient.query
@@ -44,11 +44,11 @@ describe("ScanService - Market Price Calculation", () => {
 
       expect(mockClient.query).toHaveBeenCalledWith(
         "INSERT INTO market_data (item, scan, market_price, quantity)\n         VALUES ($1, $2, $3, $4)",
-        [123, scanId, 3, 11]
+        [123, scanId, 1, 11]
       );
     });
 
-    test("calculates median with edge trimming for datasets 5-9", async () => {
+    test("uses lowest unit price for smaller datasets", async () => {
       const scanId = 1;
 
       mockClient.query
@@ -70,7 +70,7 @@ describe("ScanService - Market Price Calculation", () => {
 
       expect(mockClient.query).toHaveBeenCalledWith(
         "INSERT INTO market_data (item, scan, market_price, quantity)\n         VALUES ($1, $2, $3, $4)",
-        [456, scanId, 30, 5]
+        [456, scanId, 10, 5]
       );
     });
 
@@ -139,12 +139,12 @@ describe("ScanService - Market Price Calculation", () => {
 
       expect(mockClient.query).toHaveBeenCalledWith(
         "INSERT INTO market_data (item, scan, market_price, quantity)\n         VALUES ($1, $2, $3, $4)",
-        [111, scanId, 8, 2]
+        [111, scanId, 5, 2]
       );
 
       expect(mockClient.query).toHaveBeenCalledWith(
         "INSERT INTO market_data (item, scan, market_price, quantity)\n         VALUES ($1, $2, $3, $4)",
-        [222, scanId, 200, 4]
+        [222, scanId, 100, 4]
       );
     });
   });

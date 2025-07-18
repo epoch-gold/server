@@ -98,50 +98,14 @@ const scanService = {
         0
       );
 
-      const perUnitPrices = [];
+      const lowestUnitPrice = parseFloat(auctions[0].unit_price);
 
-      for (const auction of auctions) {
-        const unitPrice = parseFloat(auction.unit_price);
-        const quantity = parseInt(auction.quantity);
-
-        if (!isNaN(unitPrice) && unitPrice > 0 && quantity > 0) {
-          perUnitPrices.push(unitPrice);
-        }
-      }
-
-      if (perUnitPrices.length === 0) continue;
-
-      perUnitPrices.sort((a, b) => a - b);
-
-      let trimmedPrices = perUnitPrices;
-      if (perUnitPrices.length >= 10) {
-        const trimPercent = 0.1;
-        const trimCount = Math.floor(perUnitPrices.length * trimPercent);
-        trimmedPrices = perUnitPrices.slice(
-          trimCount,
-          perUnitPrices.length - trimCount
-        );
-      } else if (perUnitPrices.length >= 5) {
-        trimmedPrices = perUnitPrices.slice(1, perUnitPrices.length - 1);
-      }
-
-      let marketPrice;
-      const priceCount = trimmedPrices.length;
-
-      if (priceCount === 1) {
-        marketPrice = trimmedPrices[0];
-      } else if (priceCount % 2 === 0) {
-        const mid1 = trimmedPrices[priceCount / 2 - 1];
-        const mid2 = trimmedPrices[priceCount / 2];
-        marketPrice = (mid1 + mid2) / 2;
-      } else {
-        marketPrice = trimmedPrices[Math.floor(priceCount / 2)];
-      }
+      if (isNaN(lowestUnitPrice) || lowestUnitPrice <= 0) continue;
 
       await client.query(
         `INSERT INTO market_data (item, scan, market_price, quantity)
          VALUES ($1, $2, $3, $4)`,
-        [itemId, scanId, Math.round(marketPrice), totalQuantity]
+        [itemId, scanId, Math.round(lowestUnitPrice), totalQuantity]
       );
     }
   },
