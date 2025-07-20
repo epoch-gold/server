@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const scanService = require("../services/scanService");
+const pool = require("../config/db");
 
 const API_KEY = process.env.API_KEY;
 
@@ -26,12 +27,10 @@ router.post("/", authenticateApiKey, async (req, res) => {
         !auctionData.scanInfo.timestamp ||
         !auctionData.scanInfo.count
       ) {
-        return res
-          .status(400)
-          .json({
-            error:
-              "Invalid scan data: Missing items, auctions, or scanInfo (with timestamp or count)",
-          });
+        return res.status(400).json({
+          error:
+            "Invalid scan data: Missing items, auctions, or scanInfo (with timestamp or count)",
+        });
       }
 
       const itemMap = new Map();
@@ -68,12 +67,10 @@ router.post("/", authenticateApiKey, async (req, res) => {
         !scanData.scanInfo.timestamp ||
         !scanData.scanInfo.count
       ) {
-        return res
-          .status(400)
-          .json({
-            error:
-              "Invalid scan data: Missing items, auctions, or scanInfo (with timestamp or count)",
-          });
+        return res.status(400).json({
+          error:
+            "Invalid scan data: Missing items, auctions, or scanInfo (with timestamp or count)",
+        });
       }
     }
 
@@ -81,28 +78,41 @@ router.post("/", authenticateApiKey, async (req, res) => {
       (item) => !item.entry || !item.name || !item.icon
     );
     if (invalidItems.length > 0) {
-      return res
-        .status(400)
-        .json({
-          error: `Invalid scan data: ${invalidItems.length} items are missing entry, name, or icon`,
-        });
+      return res.status(400).json({
+        error: `Invalid scan data: ${invalidItems.length} items are missing entry, name, or icon`,
+      });
     }
 
     const invalidAuctions = scanData.auctions.filter(
       (auction) => !auction.entry || !auction.quantity || !auction.price
     );
     if (invalidAuctions.length > 0) {
-      return res
-        .status(400)
-        .json({
-          error: `Invalid scan data: ${invalidAuctions.length} auctions are missing entry, quantity, or price`,
-        });
+      return res.status(400).json({
+        error: `Invalid scan data: ${invalidAuctions.length} auctions are missing entry, quantity, or price`,
+      });
     }
 
     const scanId = await scanService.processScan(scanData);
     res.status(201).json({ scan_id: scanId });
   } catch (error) {
     console.error("Error processing scan:", error.message);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+router.get("/latest", async (req, res) => {
+  try {
+    const result = await pool.query(
+      "SELECT timestamp FROM scans ORDER BY timestamp DESC LIMIT 1"
+    );
+
+    if (result.rows.length === 0) {
+      return res.json({ timestamp: null });
+    }
+
+    res.json({ timestamp: result.rows[0].timestamp });
+  } catch (error) {
+    console.error("Error fetching latest scan:", error.message);
     res.status(500).json({ error: "Internal server error" });
   }
 });
