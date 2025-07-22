@@ -4,7 +4,7 @@ This is the backend server for the Project Epoch Auction House, built with Node.
 
 ## Local Development
 
-Run the server and tests on your local machine using Docker Compose.
+Run the server and tests on your local machine using Docker.
 
 ### Prerequisites
 
