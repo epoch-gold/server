@@ -1,6 +1,6 @@
 # Project Epoch Auction House Server
 
-This is the backend server for the Project Epoch Auction House, built with Node.js, Express, and PostgreSQL. It supports local development using Docker Compose and automated production deployment with GitHub Actions. Designed for use with Wrath of the Lich King servers.
+This is the backend server for the Project Epoch Auction House, built with Node.js, Express, and PostgreSQL. It supports local development using Docker Compose and automated production deployment with GitHub Actions. Designed for use with Project Epoch. Currently only supports the Kezan realm.
 
 ## Local Development
 
